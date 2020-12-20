@@ -25,7 +25,7 @@ RIGHT = 3
 
 #game constants
 VIRUS_ODDS     = 22     #chances a new alien appears
-VIRUS_RELOAD   = [1000,30,10,7,5]     #frames between new aliens
+VIRUS_RELOAD   = [1000,30,9,2,1]     #frames between new aliens
 # MONEY          = 3000
 DAY_RELOAD     = 10     #frames for Day 
 END            = 5
@@ -85,7 +85,11 @@ class Virus(pygame.sprite.Sprite):
 	def __init__(self):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		self.image = self.images[0]
-		self.random_seed = 10 * random.randint(0, 7)
+		self.random_seed = 10 * random.randint(0, 7) # 0 ~ 70
+		if self.random_seed == 0:
+			self.random_seed += 1
+		elif self.random_seed == 70:
+			self.random_seed -= 1
 		self.rect = self.image.get_rect(topleft = (0, 400 + self.random_seed))
 		self.row_facing = Virus.speed
 		self.col_facing = 0
@@ -144,10 +148,10 @@ class Boom(pygame.sprite.Sprite):
 		if self.life <= 0: self.kill() 
 
 class Shot(pygame.sprite.Sprite):
-	speed = 10
 	images = []
-	def __init__(self, start_rect, x, y):
+	def __init__(self, start_rect, x, y, speed = 10):
 		pygame.sprite.Sprite.__init__(self, self.containers)
+		self.speed = speed
 		self.image = self.images[0]
 		self.rect = self.image.get_rect(center=start_rect.center)
 		self.row_facing = x  # 얘랑
@@ -177,22 +181,20 @@ class Cure_Tower(pygame.sprite.Sprite):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		self.level = level
 		self.image = self.images[self.level]
-		self.attack_speed = 3 - self.level
+		self.attack_speed = 4 - self.level
 		self.rect = self.image.get_rect(topleft = (x * 100, y * 100))
 		self.frame = 0
 		self.virus_data = virus_data
 		self.viruses = viruses
-
+		self.bullet_speed = [10, 10, 12] # 10, 11, 11
 	def update(self):
-		def f1(x):
-			return x[0]
 		self.frame += 1
-		shoot = self.frame % (self.attack_speed * 5)
+		shoot = self.frame % (self.attack_speed * 4)
 		if shoot == 0:
 			for virus_exist_place in list(pygame.sprite.groupcollide(self.virus_data, self.viruses, 0, 0).keys())[::-1]:
 				x, y = virus_exist_place.rect.topleft 
 				if abs(x - self.rect.x) <= 100 and abs(y - self.rect.y) <= 100:
-					Shot(self.rect, (x - self.rect.x)/100 , (y - self.rect.y)/100)	# 총알 발사
+					Shot(self.rect, (x - self.rect.x)/100 , (y - self.rect.y)/100, speed = self.bullet_speed[self.level])	# 총알 발사
 					break
 
 
@@ -207,6 +209,8 @@ class Date(pygame.sprite.Sprite):
 	message = ['Corona Outbreak(January)', '1st Pandemic(Febuary)', '2st Pandemic(August)', 
 	'3rd Pandemic(November)', 'Corona is defeated!!']
 	phase = 0
+	display = None
+	viruses = None
 	def __init__(self):
 		pygame.sprite.Sprite.__init__(self)
 		self.font = FONT
@@ -230,13 +234,26 @@ class Date(pygame.sprite.Sprite):
 		# self.msg = self.Month[self.month] + " " + str(self.day)
 		if (self.month, self.day) == self.pandemic_day[self.phase]:
 			Date.phase += 1 # stage up
+			if Date.phase == 5:
+				for v in self.viruses:
+					Explosion(v)
+				text_surf = pygame.font.Font(None, 50).render("You did it!! Human survived from Corona!", True, RED)
+				text_rect = text_surf.get_rect(center = (500, 300))
+				self.display.blit(text_surf, text_rect)
+				pygame.display.update()
+				pygame.time.wait(2000)
+				pygame.quit()
+				sys.exit()
+
 			global virusreload
+			Virus.speed += 1
 			virusreload = VIRUS_RELOAD[self.phase]
 			self.msg = 'Phase ' + str(self.phase) + ': ' + self.message[self.phase - 1]  
-				# alarm!!!
+			# alarm!!!
 		elif self.day == 1:
 			self.msg = self.Month[self.month]
 		self.image = self.font.render(self.msg, 0, self.color) 
+		self.image.get_rect(center = (500, 30))
 
 
 class Button(pygame.sprite.Sprite):
@@ -342,14 +359,16 @@ class GameScene(Scene):
 		self.background.blit(pygame.transform.scale(load_image('background_small.png'), (1000, 600)) ,(0, 0))
 		self.virus_path = virus_path
 		self.tower_available = tower_available
-		self.money = 3000
-		self.cost = [300, 1000, 2500]
+		self.money = 2500
+		self.cost = [300, 1000, 3000]
 		self.hospital_icon = [pygame.transform.scale(load_image('hospital1.png'), (50, 50)), 
 		pygame.transform.scale(load_image('hospital2.png'), (50, 50)),
 		pygame.transform.scale(load_image('hospital3.png'), (50, 50))]
 		self.hospital_state = 0
 		# Assign default groups to each sprite class
 		Virus.display = display
+		Date.display = display
+		Date.viruses = self.viruses
 		Virus.containers = self.viruses, self.all
 		Shot.containers = self.shots, self.all
 		Cure_Tower.containers = self.towers, self.all
@@ -373,9 +392,8 @@ class GameScene(Scene):
 		if event.type == pygame.KEYDOWN:
 			if self.hospital_state >= 1:
 				self.hospital_icon[self.hospital_state - 1].set_alpha(255)
-			if event.key == pygame.K_SPACE:
-				return 'Main'
-			elif event.key == pygame.K_1:
+				self.hospital_state = 0
+			if event.key == pygame.K_1:
 				if self.money >= self.cost[0]:
 					self.hospital_state = 1
 			elif event.key == pygame.K_2:
@@ -403,27 +421,27 @@ class GameScene(Scene):
 		for column_index in range(self.n_cols):
 			for row_index in range(self.n_rows):
 				if(self.virus_path[column_index][row_index]):
-					continue  
-				pygame.draw.rect(self.display, WHITE, 
-	            	pygame.Rect(column_index * self.CELL_SIZE, 
-	            		row_index * self.CELL_SIZE, self.CELL_SIZE, self.CELL_SIZE), width = 1)
+					# continue  
+					pygame.draw.rect(self.display, WHITE, 
+		            	pygame.Rect(column_index * self.CELL_SIZE, 
+		            		row_index * self.CELL_SIZE, self.CELL_SIZE, self.CELL_SIZE), width = 1)
 		subText = pygame.font.Font(None, 20)
 		subSurf = subText.render('Money: ' + str(self.money), True, RED)
 		subRect = subSurf.get_rect(topleft = (20, 10))
 		self.display.blit(subSurf, subRect)
 		self.display.blit(self.hospital_icon[0], (0, 50))
 		subText = pygame.font.Font(None, 20)
-		subSurf = subText.render('300 (Press ’1’ & Click)', True, RED)
+		subSurf = subText.render(str(self.cost[0]) + ' (Press ’1’ & Click)', True, RED)
 		subRect = subSurf.get_rect(topleft = (50, 70))
 		self.display.blit(subSurf, subRect)
 		self.display.blit(self.hospital_icon[1], (0, 110))
 		subText = pygame.font.Font(None, 20)
-		subSurf = subText.render('1000 (Press ’2’ & Click)', True, RED)
+		subSurf = subText.render(str(self.cost[1]) + ' (Press ’2’ & Click)', True, RED)
 		subRect = subSurf.get_rect(topleft = (50, 130))
 		self.display.blit(subSurf, subRect)
 		self.display.blit(self.hospital_icon[2], (0, 170))
 		subText = pygame.font.Font(None, 20)
-		subSurf = subText.render('2500 (Press ’3’ & Click)', True, RED)
+		subSurf = subText.render(str(self.cost[2]) + ' (Press ’3’ & Click)', True, RED)
 		subRect = subSurf.get_rect(topleft = (50, 190))
 		self.display.blit(subSurf, subRect)
 		
@@ -451,7 +469,7 @@ class GameScene(Scene):
 		for virus in pygame.sprite.groupcollide(self.viruses, self.shots, 1, 1).keys():
 			# boom_sound.play()
 			Explosion(virus)
-			self.money += 100
+			self.money += 50
 			# Explosion(shots)
 
 
@@ -502,16 +520,12 @@ def main(n_rows = 6, n_cols = 10, block_size = 100):
 				4 <= column_index <= 8 and row_index == 2 or
 				column_index == 8 and 3 <= row_index <= 5) else False for row_index in range(row)] for column_index in range(col)]
 
-	tower_available = [[True if((row_index == 3 and column_index <= 1 or 
-				column_index == 2 and 1 <= row_index <= 3or 
-				3 <= column_index <= 9 and row_index == 1 or
-				column_index == 9 and 2 <= row_index <= 5) or 
-				(row_index == 5 and column_index <= 3 or 
-					column_index == 4 and 3 <= row_index <= 5 or 
-					5 <= column_index <= 7 and row_index == 3 or
-					column_index == 7 and 4 <= row_index <= 5))
+	tower_available = [[True if(column_index == 2 and 1 <= row_index <= 3 \
+		or 3 <= column_index <= 9 and row_index == 1 or column_index == 9 and 2 <= row_index <= 5) \
+	or (row_index == 5 and 2 <= column_index <= 3 or column_index == 4 and 3 <= row_index <= 5 or \
+		5 <= column_index <= 7 and row_index == 3 or column_index == 7 and 4 <= row_index <= 5) \
+	else False for row_index in range(row)] for column_index in range(col)]
 
-					else False for row_index in range(row)] for column_index in range(col)]
 	scenes = {'Main': MainScene(display), 'Game': GameScene(display = display, virus_path = virus_path, tower_available = tower_available), 
 	'HowToPlay': HowToPlayScene(display, howtoplay_img)}
 	scene = scenes['Main']
