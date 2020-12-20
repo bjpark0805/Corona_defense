@@ -392,6 +392,7 @@ class GameScene(Scene):
 				self.hospital_icon[self.hospital_state - 1].set_alpha(255)
 				if self.tower_available[x//100][y//100] and self.money >= self.cost[self.hospital_state - 1]:
 					self.money -= self.cost[self.hospital_state - 1]
+					self.tower_available[x//100][y//100] = False
 					Cure_Tower(level = self.hospital_state - 1, x = x//100, y = y//100,
 						viruses = self.viruses, virus_data = self.virus_data)
 			self.hospital_state = 0
