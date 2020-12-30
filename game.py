@@ -94,6 +94,7 @@ class Virus(pygame.sprite.Sprite):
 		self.row_facing = Virus.speed
 		self.col_facing = 0
 		self.frame = 0
+		self.game_over = load_sound('gameover.mp3')
 
 	def update(self):
 		x, y = self.rect.topleft 	
@@ -104,11 +105,15 @@ class Virus(pygame.sprite.Sprite):
 		elif x >= 800 + self.random_seed and y <= 270 - self.random_seed:
 			self.row_facing, self.col_facing = 0, Virus.speed
 		elif x >= 800 + self.random_seed and y >= 570:
+			if pygame.mixer:
+				pygame.mixer.music.fadeout(1000)
+
 			text_surf = pygame.font.Font(None, 115).render("GAME OVER", True, RED)
 			text_rect = text_surf.get_rect(center = (500, 300))
 			self.display.blit(text_surf, text_rect)
+			self.game_over.play()
 			pygame.display.update()
-			pygame.time.wait(2000)
+			pygame.time.wait(6000)
 			pygame.quit()
 			sys.exit()
 
@@ -134,19 +139,6 @@ class Explosion(pygame.sprite.Sprite):
         self.image = self.images[self.life//self.animcycle%2]
         if self.life <= 0: self.kill()
 
-class Boom(pygame.sprite.Sprite):
-	defaultlife = 12
-	images = []
-	def __init__(self, actor):
-		pygame.sprite.Sprite.__init__(self, self.containers)
-		self.image = self.images[0]
-		self.rect = self.image.get_rect(center = actor.rect.center)
-		self.life = self.defaultlife
-
-	def update(self):
-		self.life = self.life - 1
-		if self.life <= 0: self.kill() 
-
 class Shot(pygame.sprite.Sprite):
 	images = []
 	def __init__(self, start_rect, x, y, speed = 10):
@@ -159,7 +151,6 @@ class Shot(pygame.sprite.Sprite):
 		self.start_rect = start_rect
 		self.temp_x, self.temp_y = self.start_rect.topleft
 		self.target_rect = pygame.Rect(self.temp_x + 100 * self.row_facing, self.temp_y + 100 * self.col_facing, 100, 100)
-	
 	def update(self):
 		self.rect.move_ip(self.speed * self.row_facing, self.speed * self.col_facing)
 		if not self.start_rect.contains(self.rect) and not self.target_rect.contains(self.rect) \
@@ -187,6 +178,8 @@ class Cure_Tower(pygame.sprite.Sprite):
 		self.virus_data = virus_data
 		self.viruses = viruses
 		self.bullet_speed = [10, 10, 12] # 10, 11, 11
+		self.shoot_sound = load_sound('car_door.wav')
+
 	def update(self):
 		self.frame += 1
 		shoot = self.frame % (self.attack_speed * 4)
@@ -194,20 +187,17 @@ class Cure_Tower(pygame.sprite.Sprite):
 			for virus_exist_place in list(pygame.sprite.groupcollide(self.virus_data, self.viruses, 0, 0).keys())[::-1]:
 				x, y = virus_exist_place.rect.topleft 
 				if abs(x - self.rect.x) <= 100 and abs(y - self.rect.y) <= 100:
+					self.shoot_sound.play()
 					Shot(self.rect, (x - self.rect.x)/100 , (y - self.rect.y)/100, speed = self.bullet_speed[self.level])	# 총알 발사
 					break
 
-
-class Hospital(pygame.sprite.Sprite):
-	def __init__(self):
-		pass
 
 class Date(pygame.sprite.Sprite):	
 	Month = ["January", 'Feburary', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 
 	'November', 'December']
 	pandemic_day = [(0, 20), (1, 18), (7, 3), (10, 14), (11, 30)] # 최초 감염 : 1월 20일, 1차 유행 : 2월 18일, 2차 유행: 8월 3일, 3차 유행: 11월 unknown
-	message = ['Corona Outbreak(January)', '1st Pandemic(Febuary)', '2st Pandemic(August)', 
-	'3rd Pandemic(November)', 'Corona is defeated!!']
+	message = ['Covid-19 Outbreak(January)', '1st Pandemic(Febuary)', '2st Pandemic(August)', 
+	'3rd Pandemic(November)', 'Covid-19 is defeated!!']
 	phase = 0
 	display = None
 	viruses = None
@@ -221,7 +211,9 @@ class Date(pygame.sprite.Sprite):
 		self.msg = 'READY'
 		self.update()
 		self.rect = self.image.get_rect(center = (500, 30))
-	
+		self.alarm_music = load_sound('alarm.mp3')
+		self.clear_music = load_sound('wearethechamp.mp3')
+
 	def update(self):
 		self.count += 1
 		if self.count > DAY_RELOAD:
@@ -237,21 +229,24 @@ class Date(pygame.sprite.Sprite):
 			if Date.phase == 5:
 				for v in self.viruses:
 					Explosion(v)
+				if pygame.mixer:
+					pygame.mixer.music.fadeout(1000)
 				text_surf = pygame.font.Font(None, 50).render("You did it!! Human survived from Corona!", True, RED)
 				text_rect = text_surf.get_rect(center = (500, 300))
 				self.display.blit(text_surf, text_rect)
+				self.clear_music.play()
 				pygame.display.update()
-				pygame.time.wait(2000)
+				pygame.time.wait(8000)
 				pygame.quit()
 				sys.exit()
-
+			self.alarm_music.play()
 			global virusreload
 			Virus.speed += 1
 			virusreload = VIRUS_RELOAD[self.phase]
 			self.msg = 'Phase ' + str(self.phase) + ': ' + self.message[self.phase - 1]  
 			# alarm!!!
 		elif self.day == 1:
-			self.msg = self.Month[self.month]
+			self.msg = self.Month[self.month] + ' 2020'
 		self.image = self.font.render(self.msg, 0, self.color) 
 		self.image.get_rect(center = (500, 30))
 
@@ -283,7 +278,7 @@ class Button(pygame.sprite.Sprite):
 		self.output = output
 
 	def handle_event(self, event):
-		if event.type == pygame.MOUSEBUTTONDOWN:
+		if event.type == pygame.MOUSEBUTTONDOWN and event.button == LEFT:
 			if self.rect.collidepoint(pygame.mouse.get_pos()):
 				self.image = self.image_normal
 				return self.output
@@ -326,7 +321,7 @@ class MainScene(Scene):
 			image_hover_color = LIGHT_RED
 			)
 		self.buttons.add(self.play_button, self.howtoplay_button)
-
+		
 	def handle_event(self, event):
 		for button in self.buttons:
 			output = button.handle_event(event)
@@ -365,6 +360,8 @@ class GameScene(Scene):
 		pygame.transform.scale(load_image('hospital2.png'), (50, 50)),
 		pygame.transform.scale(load_image('hospital3.png'), (50, 50))]
 		self.hospital_state = 0
+		self.opening_music = load_sound('strategy.mp3')
+
 		# Assign default groups to each sprite class
 		Virus.display = display
 		Date.display = display
@@ -383,6 +380,7 @@ class GameScene(Scene):
 
 		# Virus() # note, this 'lives' because it goes into a sprite group
 		# Cure_Tower(viruses = self.viruses, virus_data = self.virus_data)
+		self.opening_music.play()
 
 		if pygame.font:
 			self.all.add(Date())
@@ -405,14 +403,15 @@ class GameScene(Scene):
 			else:
 				self.hospital_state = 0
 		elif event.type == pygame.MOUSEBUTTONDOWN:
-			x, y = pygame.mouse.get_pos()
-			if self.hospital_state >= 1:
-				self.hospital_icon[self.hospital_state - 1].set_alpha(255)
-				if self.tower_available[x//100][y//100] and self.money >= self.cost[self.hospital_state - 1]:
-					self.money -= self.cost[self.hospital_state - 1]
-					self.tower_available[x//100][y//100] = False
-					Cure_Tower(level = self.hospital_state - 1, x = x//100, y = y//100,
-						viruses = self.viruses, virus_data = self.virus_data)
+			if event.button == LEFT:
+				x, y = pygame.mouse.get_pos()
+				if self.hospital_state >= 1:
+					self.hospital_icon[self.hospital_state - 1].set_alpha(255)
+					if self.tower_available[x//100][y//100] and self.money >= self.cost[self.hospital_state - 1]:
+						self.money -= self.cost[self.hospital_state - 1]
+						self.tower_available[x//100][y//100] = False
+						Cure_Tower(level = self.hospital_state - 1, x = x//100, y = y//100,
+							viruses = self.viruses, virus_data = self.virus_data)
 			self.hospital_state = 0
 
 
@@ -505,7 +504,6 @@ def main(n_rows = 6, n_cols = 10, block_size = 100):
 	Virus.images = [img, pygame.transform.rotate(img, 90), pygame.transform.rotate(img, 180),pygame.transform.rotate(img, 270)]
 	img = pygame.transform.scale(load_image('explosion.png'), (30, 30))
 	Explosion.images = [img, pygame.transform.flip(img, 1, 1)]
-	Boom.images = [pygame.transform.scale(load_image('explosion.png'), (80, 60))]
 	Shot.images = [pygame.transform.scale(load_image('bulletcircle.png'), (50, 50))]
 	Cure_Tower.images = [pygame.transform.scale(load_image('hospital1.png'), (100, 100)), 
 	pygame.transform.scale(load_image('hospital2.png'), (100, 100)),
@@ -513,7 +511,7 @@ def main(n_rows = 6, n_cols = 10, block_size = 100):
 
 	# Set basic display property
 	pygame.display.set_caption('Corona Defense')        
-	howtoplay_img = pygame.transform.scale(load_image('howtoplay.jpg'), (1000, 600))
+	howtoplay_img = pygame.transform.scale(load_image('howtoplay.png'), (1000, 600))
 	# Logic map
 	virus_path = [[True if(row_index == 4 and column_index <= 2 or 
 				column_index == 3 and 2 <= row_index <= 4 or 
@@ -533,6 +531,11 @@ def main(n_rows = 6, n_cols = 10, block_size = 100):
 	GAME_OVER = True
 	global virusreload
 	virusreload = VIRUS_RELOAD[0]
+
+	if pygame.mixer:
+		music = os.path.join(main_dir, 'data', 'background_music.mp3')
+		pygame.mixer.music.load(music)
+		pygame.mixer.music.play(-1)
 
 	while True:
 		dirty = None
