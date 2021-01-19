@@ -54,4 +54,4 @@ python game.py
 - Bumjoon Park (qkrskaqja@snu.ac.kr)
 
 *This software may be used only for personal purposes.*  
-*For other purposes (e.g., commercial), there could be background, music copyright issues.*
+*For other purposes (e.g., commercial), there could be copyright issues for images and musics.*
