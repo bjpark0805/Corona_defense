@@ -10,28 +10,28 @@ This project is based on the final project of Digital Computer Concept and Pract
 The tree structure of this project is given as follows:
 
 ``` Unicode
-Speech_Analysis
+Corona_defense
   ├── data
-  │    └── audioclips.wav 
-  ├── Transcripts
-  │    └── transcript.txt  
-  ├── Timelines
-  │    └── timeline.csv 
-  ├── Beep_Recognition.ipynb
-  ├── SpeechRecognitionProject.ipynb
-  └── run_glue_benchmark.py: comprehensive prediction file for teacher and student models
+  │    ├── alarm.mp3
+  │    ├── audioclips.wav 
+  │    ├── background_music.mp3
+  │    ├── background_small.png 
+  │    ├── bulletcircle.png 
+  │    ├── car_door.wav 
+  │    ├── explosion.png 
+  │    ├── gameover.mp3
+  │    ├── hosipital1.png 
+  │    ├── hosipital2.png
+  │    ├── hosipital3.png 
+  │    ├── strategy.mp3 
+  │    ├── virus.png
+  │    └── wearethechamp.mp3 
+  └── game.py: main file
 ```
 
 #### Data description
 - audio clips
-
-* Note that: 
-    * You can use your own audio clips.
-    * Sample audio clips are not provided because of copyright issue.
-   
-#### Output
-* The transcripts will be saved in `Transcripts/{transripts.txt}` after the audio clips are transcribed.
-* The timelines will be saved in `Timeline/{timeline.csv}` after the audio clips are analyzed.
+- background, object(towers, shots, viruses) images
 
 ## Install
 
@@ -52,3 +52,6 @@ python game.py
 ## Contact
 
 - Bumjoon Park (qkrskaqja@snu.ac.kr)
+
+*This software may be used only for personal purposes.*  
+*For other purposes (e.g., commercial), there could be background, music copyright issues.*
