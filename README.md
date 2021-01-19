@@ -2,6 +2,7 @@
 
 This package provides an implementation of defense arcade game with pygame and python. 
 The story of the game is defending corona virus pendamic of 2020 in Korea. 
+
 ![game_image](https://user-images.githubusercontent.com/31841384/104996822-e4b50080-5a6b-11eb-9c7d-b80d69aba477.png)
 
 ## Overview
