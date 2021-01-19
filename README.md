@@ -11,7 +11,7 @@ The tree structure of this project is given as follows:
 
 ``` Unicode
 Speech_Analysis
-  ├── audio
+  ├── data
   │    └── audioclips.wav 
   ├── Transcripts
   │    └── transcript.txt  
