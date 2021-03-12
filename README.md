@@ -1,7 +1,7 @@
 # Corona_defense
 
-This package provides an implementation of defense arcade game with pygame and python. 
-The story of the game is defending corona virus pendamic of 2020 in Korea. 
+This package provides an implementation of simple defense arcade game with pygame and python. 
+Play the game by defending corona viruses arriving the endline by building medical centers. Medical centers will throw cure bombs which could burst conona viruses. The story of the game is based on Covid-19 pendamic of 2020 in Korea.
 
 ![game_image](https://user-images.githubusercontent.com/31841384/104996822-e4b50080-5a6b-11eb-9c7d-b80d69aba477.png)
 
@@ -46,8 +46,8 @@ Corona_defense
 ### Clone the repository
 
 ```
-git clone https://github.com/bjpark0805/Speech_Analysis.git
-cd Speech_Analysis
+git clone https://github.com/bjpark0805/Corona_defense.git
+cd Corona_defense
 python game.py
 ```
 
@@ -55,5 +55,5 @@ python game.py
 
 - Bumjoon Park (qkrskaqja@snu.ac.kr)
 
-*This software may be used only for personal purposes.*  
+*This software may be used only for personal(educational) purposes.*  
 *For other purposes (e.g., commercial), there could be copyright issues for images and audios.*
